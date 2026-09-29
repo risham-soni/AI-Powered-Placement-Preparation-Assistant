@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+python-dotenv
+pymupdf
+qdrant-client
+sentence-transformers
+langchain
+langchain-text-splitters
+openai
