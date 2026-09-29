@@ -1,6 +1,7 @@
 # 🎓 AI-Powered Placement Preparation Assistant
 
 > **An intelligent, context-grounded interview preparation platform powered by Retrieval-Augmented Generation (RAG), FastAPI, Express.js, PostgreSQL, Qdrant, and React.**
+> Live Frontend Preview ai-powered-placement-preparation-assistant-c3903we45.vercel.app
 
 ---
 
