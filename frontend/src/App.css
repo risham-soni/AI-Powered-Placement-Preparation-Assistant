@@ -1763,3 +1763,142 @@
     padding: 0 12px 14px;
   }
 }
+
+
+/* ================================= */
+/* MY UPLOADED DOCUMENTS             */
+/* ================================= */
+
+.my-documents-section {
+  width: 100%;
+  max-width: 760px;
+  margin: 28px auto 40px;
+}
+
+.my-documents-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  color: #e5e7eb;
+}
+
+.my-documents-header h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.my-documents-header p {
+  margin: 4px 0 0;
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+.documents-loading,
+.no-documents {
+  padding: 20px;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  color: #94a3b8;
+  background: #111827;
+  text-align: center;
+}
+
+.documents-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.document-card {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  background: #151b2b;
+  color: #e5e7eb;
+  cursor: pointer;
+  text-align: left;
+  transition: 0.2s ease;
+}
+
+.document-card:hover {
+  border-color: #6366f1;
+  background: #1b2235;
+}
+
+.document-card.selected {
+  border-color: #6366f1;
+  background: #20264a;
+  box-shadow: 0 0 0 1px #6366f1;
+}
+
+.document-card-icon {
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: #272b55;
+  color: #818cf8;
+  flex-shrink: 0;
+}
+
+.document-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.document-card-info strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+}
+
+.document-card-info span {
+  display: block;
+  margin-top: 4px;
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+
+/* ================================= */
+/* SELECTED DOCUMENT INDICATOR       */
+/* ================================= */
+
+.selected-document-indicator {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  max-width: 320px;
+  padding: 7px 10px;
+  margin-left: 12px;
+  border: 1px solid #4f46e5;
+  border-radius: 8px;
+  background: #1e1b4b;
+  color: #c7d2fe;
+  font-size: 12px;
+}
+
+.selected-document-indicator span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.selected-document-indicator button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: #a5b4fc;
+  cursor: pointer;
+}

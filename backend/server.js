@@ -1,3 +1,4 @@
+const companyRoutes = require("./routes/companies");
 const chatRoutes = require("./routes/chat");
 const userRoutes = require("./routes/user");
 const authRoutes = require("./routes/auth");
@@ -27,6 +28,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/documents", documentRoutes);
+app.use("/api/companies", companyRoutes);
 
 app.get("/", (req, res) => {
   res.json({

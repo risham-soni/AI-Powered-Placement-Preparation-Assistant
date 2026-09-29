@@ -57,6 +57,64 @@ const upload = multer({
 
 });
 
+router.get(
+  "/",
+  authenticateToken,
+  async (req, res) => {
+    try {
+      const result = await pool.query(
+        `
+        SELECT
+          id,
+          company,
+          file_name,
+          file_path,
+          created_at
+        FROM user_documents
+        WHERE user_id = $1
+        ORDER BY created_at DESC
+        `,
+        [req.user.userId]
+      );
+
+      const documents = result.rows.map(
+        (document) => ({
+          id: document.id,
+
+          company: document.company,
+
+          file_name: document.file_name,
+
+          document_name:
+            path.basename(
+              document.file_path
+            ),
+
+          created_at:
+            document.created_at
+        })
+      );
+
+      res.json({
+        documents
+      });
+
+    } catch (error) {
+
+      console.error(
+        "Failed to load documents:",
+        error
+      );
+
+      res.status(500).json({
+        message:
+          "Failed to load uploaded documents"
+      });
+
+    }
+  }
+);
+
 
 // UPLOAD PDF
 router.post(

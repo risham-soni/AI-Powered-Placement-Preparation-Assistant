@@ -6,8 +6,6 @@ from qdrant_client.models import (
     Filter,
     FieldCondition,
     MatchValue,
-    IsNullCondition,
-    FilterSelector,
 )
 from sentence_transformers import SentenceTransformer
 import hashlib
@@ -15,14 +13,23 @@ import hashlib
 
 COLLECTION_NAME = "placement_documents"
 
-client = QdrantClient(path="./qdrant_data")
+
+client = QdrantClient(
+    path="./qdrant_data"
+)
+
 
 model = SentenceTransformer(
     "all-MiniLM-L6-v2"
 )
 
 
+# ==================================
+# CREATE COLLECTION
+# ==================================
+
 def create_collection():
+
     collections = client.get_collections()
 
     existing = [
@@ -31,6 +38,7 @@ def create_collection():
     ]
 
     if COLLECTION_NAME not in existing:
+
         client.create_collection(
             collection_name=COLLECTION_NAME,
             vectors_config=VectorParams(
@@ -45,13 +53,19 @@ def create_collection():
         )
 
     else:
+
         print(
             f"Qdrant collection already exists: "
             f"{COLLECTION_NAME}"
         )
 
 
+# ==================================
+# CREATE POINT ID
+# ==================================
+
 def create_point_id(document):
+
     unique_string = (
         f"{document.get('user_id', 'global')}_"
         f"{document['company']}_"
@@ -64,10 +78,18 @@ def create_point_id(document):
         unique_string.encode("utf-8")
     ).hexdigest()
 
-    return int(hash_value[:16], 16)
+    return int(
+        hash_value[:16],
+        16
+    )
 
+
+# ==================================
+# ADD DOCUMENTS
+# ==================================
 
 def add_documents(documents):
+
     if not documents:
         return
 
@@ -82,24 +104,35 @@ def add_documents(documents):
         documents,
         vectors
     ):
-        point_id = create_point_id(doc)
+
+        point_id = create_point_id(
+            doc
+        )
 
         points.append(
             PointStruct(
                 id=point_id,
+
                 vector=vector,
+
                 payload={
                     "text": doc["text"],
-                    "page_number": doc["page_number"],
-                    "chunk_index": doc["chunk_index"],
-                    "document_name": doc[
-                        "document_name"
-                    ],
-                    "company": doc["company"],
-                    "user_id": doc.get(
-                        "user_id"
-                    ),
-                },
+
+                    "page_number":
+                        doc["page_number"],
+
+                    "chunk_index":
+                        doc["chunk_index"],
+
+                    "document_name":
+                        doc["document_name"],
+
+                    "company":
+                        doc["company"],
+
+                    "user_id":
+                        doc.get("user_id"),
+                }
             )
         )
 
@@ -114,193 +147,228 @@ def add_documents(documents):
     )
 
 
+# ==================================
+# SEARCH
+# ==================================
+
 def search(
     query,
     limit=5,
     company=None,
     user_id=None,
+    document_name=None,
 ):
+
     query_vector = model.encode(
         query,
         normalize_embeddings=True
     ).tolist()
 
-    # Build company filter
+
+    # ==================================
+    # COMPANY FILTER
+    # ==================================
+
     company_condition = None
 
     if company:
+
         company_condition = FieldCondition(
             key="company",
+
             match=MatchValue(
                 value=company
             ),
         )
 
-    # -------------------------------------------------
-    # CASE 1: No logged-in user
-    # -------------------------------------------------
-    # Search only global/built-in documents.
+
+    # ==================================
+    # DOCUMENT FILTER
+    # ==================================
+
+    document_condition = None
+
+    if document_name:
+
+        document_condition = FieldCondition(
+            key="document_name",
+
+            match=MatchValue(
+                value=document_name
+            ),
+        )
+
+
+    # ==================================
+    # NO USER
+    # ==================================
+
     if user_id is None:
+
+        conditions = []
+
+        if company_condition:
+            conditions.append(
+                company_condition
+            )
+
+        if document_condition:
+            conditions.append(
+                document_condition
+            )
 
         query_filter = None
 
-        if company_condition:
+        if conditions:
             query_filter = Filter(
-                must=[company_condition]
+                must=conditions
             )
 
         results = client.query_points(
             collection_name=COLLECTION_NAME,
+
             query=query_vector,
+
             query_filter=query_filter,
+
             limit=limit,
         )
 
         return results.points
 
-    # -------------------------------------------------
-    # CASE 2: Logged-in user
-    # -------------------------------------------------
-    # We perform two searches:
-    #
-    # 1. Global documents
-    # 2. Documents uploaded by this user
-    #
-    # This prevents documents belonging to other users
-    # from appearing in the results.
+
+    # ==================================
+    # GLOBAL DOCUMENTS
+    # ==================================
 
     global_conditions = []
 
     if company_condition:
+
         global_conditions.append(
             company_condition
         )
 
-    # Global documents have user_id = None.
-    #
-    # Qdrant's payload filter for null/missing fields
-    # can be avoided here by using a separate search
-    # without a user filter and later checking payloads.
+    if document_condition:
+
+        global_conditions.append(
+            document_condition
+        )
+
+
     global_results = client.query_points(
+
         collection_name=COLLECTION_NAME,
+
         query=query_vector,
+
         query_filter=(
-            Filter(must=global_conditions)
+            Filter(
+                must=global_conditions
+            )
             if global_conditions
             else None
         ),
+
         limit=limit * 2,
     )
 
-    # Keep only global documents.
+
+    # Only built-in/global documents
     global_points = [
+
         point
+
         for point in global_results.points
-        if point.payload.get("user_id") is None
+
+        if point.payload.get(
+            "user_id"
+        ) is None
+
     ]
 
-    # Search the current user's private documents.
+
+    # ==================================
+    # USER DOCUMENTS
+    # ==================================
+
     user_conditions = [
+
         FieldCondition(
+
             key="user_id",
+
             match=MatchValue(
                 value=user_id
             ),
+
         )
+
     ]
 
+
     if company_condition:
+
         user_conditions.append(
             company_condition
         )
 
+
+    if document_condition:
+
+        user_conditions.append(
+            document_condition
+        )
+
+
     user_results = client.query_points(
+
         collection_name=COLLECTION_NAME,
+
         query=query_vector,
+
         query_filter=Filter(
             must=user_conditions
         ),
+
         limit=limit * 2,
     )
 
-    # Combine both result sets.
+
+    # ==================================
+    # COMBINE RESULTS
+    # ==================================
+
     combined = (
-        global_points +
+        global_points
+        +
         user_results.points
     )
 
-    # Sort by similarity score.
+
     combined.sort(
-        key=lambda point: point.score,
+
+        key=lambda point:
+            point.score,
+
         reverse=True
+
     )
 
-    # Return only the requested number.
+
     return combined[:limit]
-    query_vector = model.encode(
-        query,
-        normalize_embeddings=True
-    ).tolist()
 
-    conditions = []
 
-    # Company filter
-    if company:
-        conditions.append(
-            FieldCondition(
-                key="company",
-                match=MatchValue(
-                    value=company
-                ),
-            )
-        )
-
-    # User access filter
-    #
-    # A user can access:
-    # 1. Global/built-in documents
-    # 2. Their own uploaded documents
-    #
-    # A user cannot access another user's documents.
-    if user_id is not None:
-        access_filter = Filter(
-            should=[
-                IsNullCondition(
-                    is_null=FieldCondition(
-                        key="user_id",
-                        is_null=True
-                    )
-                ),
-                FieldCondition(
-                    key="user_id",
-                    match=MatchValue(
-                        value=user_id
-                    ),
-                ),
-            ]
-        )
-
-        conditions.append(access_filter)
-
-    query_filter = None
-
-    if conditions:
-        query_filter = Filter(
-            must=conditions
-        )
-
-    results = client.query_points(
-        collection_name=COLLECTION_NAME,
-        query=query_vector,
-        query_filter=query_filter,
-        limit=limit,
-    )
-
-    return results.points
-
+# ==================================
+# CLOSE CLIENT
+# ==================================
 
 def close_client():
+
     try:
+
         client.close()
+
     except Exception:
+
         pass
