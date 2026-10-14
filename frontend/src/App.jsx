@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { API_BASE_URL, RAG_BASE_URL } from "./config";
 import ReactMarkdown from "react-markdown";
 
 import {
@@ -222,7 +223,7 @@ function App() {
 
       try {
         const response = await fetch(
-          "http://localhost:5000/api/chat/history",
+          `${API_BASE_URL}/api/chat/history`,
           {
             method: "GET",
 
@@ -273,7 +274,7 @@ function App() {
 
     try {
       const response = await fetch(
-        "http://localhost:5000/api/documents",
+        `${API_BASE_URL}/api/documents`,
         {
           method: "GET",
 
@@ -354,7 +355,7 @@ function App() {
 
     try {
       const response = await fetch(
-        "http://127.0.0.1:8000/chat",
+        `${RAG_BASE_URL}/chat`,
         {
           method: "POST",
 
@@ -405,7 +406,7 @@ function App() {
         try {
           const historyResponse =
             await fetch(
-              "http://localhost:5000/api/chat/history",
+              `${API_BASE_URL}/api/chat/history`,
               {
                 method: "POST",
 

@@ -1,3 +1,4 @@
+import { API_BASE_URL } from "./config";
 import { useState } from "react";
 import { Mail, Lock, Eye, EyeOff, Sparkles, ArrowRight, ShieldCheck, BookOpen, Building2 } from "lucide-react";
 
@@ -20,7 +21,7 @@ function Login({ onLogin, onRegister }) {
     setError("");
 
     try {
-      const response = await fetch("http://localhost:5000/api/auth/login", {
+      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

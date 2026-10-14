@@ -167,9 +167,11 @@ router.post(
 
       // Send document information to RAG service
       try {
+        const RAG_SERVICE_URL =
+          process.env.RAG_SERVICE_URL || "http://127.0.0.1:8000";
 
         const ragResponse = await fetch(
-          "http://127.0.0.1:8000/documents/process",
+          `${RAG_SERVICE_URL}/documents/process`,
           {
             method: "POST",
 

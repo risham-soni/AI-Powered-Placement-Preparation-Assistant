@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { API_BASE_URL } from "./config";
 
 import {
   UploadCloud,
@@ -54,7 +55,7 @@ function UploadDocument({ onUploadSuccess }) {
 
     try {
       const response = await fetch(
-        "http://localhost:5000/api/companies",
+        `${API_BASE_URL}/api/companies`,
         {
           method: "GET",
           headers: {
@@ -109,7 +110,7 @@ function UploadDocument({ onUploadSuccess }) {
 
     try {
       const response = await fetch(
-        "http://localhost:5000/api/companies",
+        `${API_BASE_URL}/api/companies`,
         {
           method: "POST",
           headers: {
@@ -281,7 +282,7 @@ function UploadDocument({ onUploadSuccess }) {
 
     try {
       const response = await fetch(
-        "http://localhost:5000/api/documents/upload",
+        `${API_BASE_URL}/api/documents/upload`,
         {
           method: "POST",
 
