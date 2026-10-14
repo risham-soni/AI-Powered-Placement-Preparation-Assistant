@@ -7,46 +7,31 @@ from qdrant_client.models import (
     FieldCondition,
     MatchValue,
 )
-from sentence_transformers import SentenceTransformer
-import hashlib
-
-
-COLLECTION_NAME = "placement_documents"
-
-
-# client = QdrantClient(
-#     path="./qdrant_data"
-# )
-
 import os
+import hashlib
+import torch
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# Connect to Qdrant Cloud online (fallback to local if URL not provided)
-# qdrant_url = os.getenv("QDRANT_URL")
-# qdrant_api_key = os.getenv("QDRANT_API_KEY")
+COLLECTION_NAME = "placement_documents"
 
-# if qdrant_url and qdrant_api_key:
-#     client = QdrantClient(
-#         url=qdrant_url,
-#         api_key=qdrant_api_key
-#     )
-# else:
-#     client = QdrantClient(
-#         path="./qdrant_data"
-#     )
-    
-# (Or strictly without local fallback:)
+# Limit PyTorch threads to reduce memory footprint on 512MB RAM instances
+torch.set_num_threads(1)
+
 client = QdrantClient(
     url=os.getenv("QDRANT_URL"),
     api_key=os.getenv("QDRANT_API_KEY")
 )
 
+_model = None
 
-model = SentenceTransformer(
-    "all-MiniLM-L6-v2"
-)
+def get_model():
+    global _model
+    if _model is None:
+        from sentence_transformers import SentenceTransformer
+        _model = SentenceTransformer("all-MiniLM-L6-v2")
+    return _model
 
 
 # ==================================
@@ -120,6 +105,7 @@ def add_documents(documents):
 
     create_collection()
 
+    model = get_model()
     vectors = model.encode(
         [doc["text"] for doc in documents],
         normalize_embeddings=True
@@ -186,6 +172,7 @@ def search(
     document_name=None,
 ):
 
+    model = get_model()
     query_vector = model.encode(
         query,
         normalize_embeddings=True
