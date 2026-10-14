@@ -1,0 +1,38 @@
+TCS_Interview_Question_Sheet
+Amazon_Interview_Question_Sheet
+
+
+
+$login = Invoke-RestMethod -Method Post `
+  -Uri "http://localhost:5000/api/auth/login" `
+  -ContentType "application/json" `
+  -Body '{"email":"auth-test@example.com","password":"Risham123"}'
+
+
+
+
+
+
+UPDATE users
+SET password_hash = '$2b$10$lZ31HMAX1DarPj2m22HZlOTVoqS4WjHHJSnSDOoRTsLYB5gr5WnC'
+WHERE email = 'auth-test@example.com';
+
+
+
+
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjYsImVtYWlsIjoiY2hhdC10ZXN0QGV4YW1wbGUuY29tIiwiaW...
+
+
+localStorage.setItem("token", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjYsImVtYWlsIjoiY2hhdC10ZXN0QGV4YW1wbGUuY29tIiwiaW...");
+
+
+.\venv\Scripts\Activate.ps1
+python -m uvicorn app.main:app --reload
+
+
+Future Updates
+Whenever you make changes to your project moving forward, you only need to run these three simple commands:
+bash
+git add .
+git commit -m "Describe your changes"
+git push

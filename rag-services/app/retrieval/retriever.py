@@ -14,8 +14,33 @@ import hashlib
 COLLECTION_NAME = "placement_documents"
 
 
+# client = QdrantClient(
+#     path="./qdrant_data"
+# )
+
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+# Connect to Qdrant Cloud online (fallback to local if URL not provided)
+# qdrant_url = os.getenv("QDRANT_URL")
+# qdrant_api_key = os.getenv("QDRANT_API_KEY")
+
+# if qdrant_url and qdrant_api_key:
+#     client = QdrantClient(
+#         url=qdrant_url,
+#         api_key=qdrant_api_key
+#     )
+# else:
+#     client = QdrantClient(
+#         path="./qdrant_data"
+#     )
+    
+# (Or strictly without local fallback:)
 client = QdrantClient(
-    path="./qdrant_data"
+    url=os.getenv("QDRANT_URL"),
+    api_key=os.getenv("QDRANT_API_KEY")
 )
 
 
@@ -92,6 +117,8 @@ def add_documents(documents):
 
     if not documents:
         return
+
+    create_collection()
 
     vectors = model.encode(
         [doc["text"] for doc in documents],
