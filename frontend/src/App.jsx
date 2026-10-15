@@ -383,7 +383,7 @@ function App() {
 
             document_name:
               selectedDocument
-                ? selectedDocument.document_name
+                ? (selectedDocument.document_name || selectedDocument.file_name)
                 : null,
           }),
         }

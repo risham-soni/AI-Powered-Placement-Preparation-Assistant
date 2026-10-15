@@ -120,19 +120,19 @@ def get_company_name(file_name):
 
     name = file_name.lower()
 
-    companies = [
-        "tcs",
-        "amazon",
-        "microsoft",
-        "google",
-        "infosys",
-        "accenture",
-    ]
+    company_map = {
+        "tcs": "TCS",
+        "amazon": "Amazon",
+        "microsoft": "Microsoft",
+        "google": "Google",
+        "infosys": "Infosys",
+        "accenture": "Accenture",
+    }
 
-    for company in companies:
+    for company, canonical in company_map.items():
 
         if company in name:
-            return company.capitalize()
+            return canonical
 
     return "Unknown"
 

@@ -86,10 +86,7 @@ router.get(
 
           file_name: document.file_name,
 
-          document_name:
-            path.basename(
-              document.file_path
-            ),
+          document_name: document.file_name,
 
           created_at:
             document.created_at
@@ -290,7 +287,10 @@ router.post(
         return res.status(201).json({
           message:
             "PDF uploaded and indexed successfully.",
-          document: result.rows[0],
+          document: {
+            ...result.rows[0],
+            document_name: result.rows[0].file_name,
+          },
           rag: ragData,
         });
 

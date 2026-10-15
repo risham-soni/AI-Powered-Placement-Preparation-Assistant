@@ -6,6 +6,7 @@ from qdrant_client.models import (
     Filter,
     FieldCondition,
     MatchValue,
+    MatchAny,
     PayloadSchemaType,
 )
 import os
@@ -220,6 +221,30 @@ def add_documents(documents):
 # SEARCH
 # ==================================
 
+def get_company_variants(comp: str) -> list[str]:
+    if not comp:
+        return []
+    comp = comp.strip()
+    variants = [
+        comp,
+        comp.lower(),
+        comp.upper(),
+        comp.capitalize(),
+        comp.title(),
+    ]
+    canonical = {
+        "tcs": "TCS",
+        "amazon": "Amazon",
+        "google": "Google",
+        "microsoft": "Microsoft",
+        "infosys": "Infosys",
+        "accenture": "Accenture",
+    }
+    if comp.lower() in canonical:
+        variants.append(canonical[comp.lower()])
+    return list(dict.fromkeys(v for v in variants if v))
+
+
 def search(
     query,
     limit=5,
@@ -227,6 +252,11 @@ def search(
     user_id=None,
     document_name=None,
 ):
+    if user_id is not None:
+        try:
+            user_id = int(user_id)
+        except (ValueError, TypeError):
+            pass
 
     model = get_model()
 
@@ -237,198 +267,132 @@ def search(
             normalize_embeddings=True
         ).tolist()
 
-
     # ==================================
-    # COMPANY FILTER
+    # COMPANY FILTER (Case-Insensitive)
     # ==================================
-
     company_condition = None
-
     if company:
-
-        company_condition = FieldCondition(
-            key="company",
-
-            match=MatchValue(
-                value=company
-            ),
-        )
-
+        variants = get_company_variants(company)
+        if len(variants) == 1:
+            company_condition = FieldCondition(
+                key="company",
+                match=MatchValue(value=variants[0]),
+            )
+        else:
+            company_condition = FieldCondition(
+                key="company",
+                match=MatchAny(any=variants),
+            )
 
     # ==================================
     # DOCUMENT FILTER
     # ==================================
-
     document_condition = None
-
     if document_name:
-
-        document_condition = FieldCondition(
-            key="document_name",
-
-            match=MatchValue(
-                value=document_name
-            ),
-        )
-
+        doc_clean = str(document_name).strip()
+        doc_base = Path(doc_clean).name
+        variants = list(dict.fromkeys([doc_clean, doc_base]))
+        if len(variants) == 1:
+            document_condition = FieldCondition(
+                key="document_name",
+                match=MatchValue(value=variants[0]),
+            )
+        else:
+            document_condition = FieldCondition(
+                key="document_name",
+                match=MatchAny(any=variants),
+            )
 
     # ==================================
-    # NO USER
+    # NO USER (Anonymous / Built-in Test)
     # ==================================
-
     if user_id is None:
-
         conditions = []
-
         if company_condition:
-            conditions.append(
-                company_condition
-            )
-
+            conditions.append(company_condition)
         if document_condition:
-            conditions.append(
-                document_condition
-            )
+            conditions.append(document_condition)
 
-        query_filter = None
-
-        if conditions:
-            query_filter = Filter(
-                must=conditions
-            )
+        query_filter = Filter(must=conditions) if conditions else None
 
         results = client.query_points(
             collection_name=COLLECTION_NAME,
-
             query=query_vector,
-
             query_filter=query_filter,
-
             limit=limit,
         )
-
         return results.points
-
-
-    # ==================================
-    # GLOBAL DOCUMENTS
-    # ==================================
-
-    global_conditions = []
-
-    if company_condition:
-
-        global_conditions.append(
-            company_condition
-        )
-
-    if document_condition:
-
-        global_conditions.append(
-            document_condition
-        )
-
-
-    global_results = client.query_points(
-
-        collection_name=COLLECTION_NAME,
-
-        query=query_vector,
-
-        query_filter=(
-            Filter(
-                must=global_conditions
-            )
-            if global_conditions
-            else None
-        ),
-
-        limit=limit * 2,
-    )
-
-
-    # Only built-in/global documents
-    global_points = [
-
-        point
-
-        for point in global_results.points
-
-        if point.payload.get(
-            "user_id"
-        ) is None
-
-    ]
-
 
     # ==================================
     # USER DOCUMENTS
     # ==================================
-
-    user_conditions = [
-
+    user_points = []
+    base_user_conditions = [
         FieldCondition(
-
             key="user_id",
-
-            match=MatchValue(
-                value=user_id
-            ),
-
+            match=MatchValue(value=user_id),
         )
-
     ]
-
-
-    if company_condition:
-
-        user_conditions.append(
-            company_condition
-        )
-
-
     if document_condition:
+        base_user_conditions.append(document_condition)
 
-        user_conditions.append(
-            document_condition
-        )
-
+    # First attempt: user_id (+ document_condition) + company_condition (if given)
+    user_attempt_conditions = list(base_user_conditions)
+    if company_condition:
+        user_attempt_conditions.append(company_condition)
 
     user_results = client.query_points(
-
         collection_name=COLLECTION_NAME,
-
         query=query_vector,
-
-        query_filter=Filter(
-            must=user_conditions
-        ),
-
+        query_filter=Filter(must=user_attempt_conditions),
         limit=limit * 2,
     )
+    user_points = list(user_results.points)
 
+    # If company filter caused 0 results, but document_name was specified,
+    # fall back to querying just by user_id + document_condition so user's selected document is not dropped
+    if not user_points and document_condition and company_condition:
+        fallback_results = client.query_points(
+            collection_name=COLLECTION_NAME,
+            query=query_vector,
+            query_filter=Filter(must=base_user_conditions),
+            limit=limit * 2,
+        )
+        user_points = list(fallback_results.points)
+
+    # ==================================
+    # GLOBAL DOCUMENTS
+    # ==================================
+    global_points = []
+    # If a specific user document was selected and found, prioritize that document and do not pollute with global docs
+    if not (document_condition and user_points):
+        global_conditions = []
+        if company_condition:
+            global_conditions.append(company_condition)
+        if document_condition:
+            global_conditions.append(document_condition)
+
+        global_results = client.query_points(
+            collection_name=COLLECTION_NAME,
+            query=query_vector,
+            query_filter=Filter(must=global_conditions) if global_conditions else None,
+            limit=limit * 2,
+        )
+
+        global_points = [
+            point
+            for point in global_results.points
+            if point.payload.get("user_id") is None
+        ]
 
     # ==================================
     # COMBINE RESULTS
     # ==================================
-
-    combined = (
-        global_points
-        +
-        user_results.points
-    )
-
-
+    combined = user_points + global_points
     combined.sort(
-
-        key=lambda point:
-            point.score,
-
-        reverse=True
-
+        key=lambda point: point.score,
+        reverse=True,
     )
-
-
     return combined[:limit]
 
 

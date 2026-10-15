@@ -249,7 +249,7 @@ def generate_answer(
             f"{company}"
         )
 
-    else:
+    elif not document_name:
 
         company = detect_company(
             question
@@ -258,6 +258,13 @@ def generate_answer(
         print(
             f"\nDetected company: "
             f"{company}"
+        )
+
+    else:
+
+        print(
+            f"\nDocument selected ({document_name}); "
+            f"skipping company auto-detection."
         )
 
 
@@ -394,14 +401,27 @@ Answer:
     response = None
 
 
-    for attempt in range(3):
+    gemini_model = os.getenv(
+        "GEMINI_MODEL",
+        "gemini-3.5-flash"
+    )
+
+    models_to_try = [
+        gemini_model,
+        "gemini-3.5-flash-lite",
+    ]
+    models_to_try = list(dict.fromkeys(m for m in models_to_try if m))
+
+    for attempt in range(len(models_to_try)):
+
+        current_model = models_to_try[attempt]
 
         try:
 
             response = (
                 client.models.generate_content(
 
-                    model="gemini-3.8-flash",
+                    model=current_model,
 
                     contents=prompt
 
