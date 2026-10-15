@@ -188,15 +188,23 @@ def get_user_id_from_token(
 
 
 # ==================================
-# ROOT ENDPOINT
+# ROOT & HEALTH CHECK ENDPOINTS
 # ==================================
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
 def root():
 
     return {
         "message":
             "Placement Preparation Assistant API is running"
+    }
+
+
+@app.api_route("/health", methods=["GET", "HEAD"])
+def health():
+
+    return {
+        "status": "healthy"
     }
 
 
