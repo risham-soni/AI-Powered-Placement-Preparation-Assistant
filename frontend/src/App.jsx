@@ -375,6 +375,11 @@ function App() {
               "All Companies"
                 ? null
                 : selectedCompany,
+
+            document_name:
+              selectedDocument
+                ? selectedDocument.document_name
+                : null,
           }),
         }
       );

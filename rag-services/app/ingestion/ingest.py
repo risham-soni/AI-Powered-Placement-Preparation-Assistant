@@ -8,15 +8,17 @@ from app.retrieval.retriever import (
 
 
 def process_uploaded_pdf(
-    file_path,
-    company,
-    user_id
+    file_path=None,
+    company="Unknown",
+    user_id=None,
+    file_base64=None,
+    file_name=None,
 ):
     """
     Process one user-uploaded PDF.
 
     Flow:
-    PDF
+    PDF (path or base64 decoded)
       ↓
     OCR / text extraction
       ↓
@@ -26,14 +28,30 @@ def process_uploaded_pdf(
       ↓
     Qdrant
     """
+    upload_dir = Path(__file__).resolve().parents[2] / "uploads"
+    upload_dir.mkdir(parents=True, exist_ok=True)
 
-    pdf_path = Path(file_path)
+    target_name = file_name or (Path(file_path).name if file_path else "uploaded.pdf")
+
+    if file_base64:
+        import base64
+        try:
+            pdf_bytes = base64.b64decode(file_base64)
+            pdf_path = upload_dir / target_name
+            pdf_path.write_bytes(pdf_bytes)
+        except Exception as err:
+            raise ValueError(f"Failed to decode base64 file data: {err}")
+    elif file_path:
+        pdf_path = Path(file_path)
+    else:
+        raise ValueError("Either file_base64 or file_path must be provided.")
 
     print("\n" + "=" * 60)
     print("PROCESSING UPLOADED PDF")
     print("=" * 60)
 
     print(f"File: {pdf_path}")
+    print(f"Target Name: {target_name}")
     print(f"Company: {company}")
     print(f"User ID: {user_id}")
 
@@ -62,7 +80,7 @@ def process_uploaded_pdf(
     # Create chunks
     documents = create_chunks(
         pages=pages,
-        document_name=pdf_path.name,
+        document_name=target_name,
         company=company,
         user_id=user_id
     )
@@ -90,7 +108,7 @@ def process_uploaded_pdf(
     print("=" * 60)
 
     return {
-        "file_name": pdf_path.name,
+        "file_name": target_name,
         "company": company,
         "user_id": user_id,
         "pages": len(pages),

@@ -13,3 +13,4 @@ google-genai
 PyJWT
 pillow
 pytesseract
+python-multipart

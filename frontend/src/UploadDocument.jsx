@@ -415,38 +415,53 @@ function UploadDocument({ onUploadSuccess }) {
                 <div className="add-company-form">
                   <input
                     type="text"
+                    className="add-company-input"
                     value={newCompany}
+                    autoFocus
                     onChange={(event) =>
                       setNewCompany(
                         event.target.value
                       )
                     }
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        handleAddCompany();
+                      } else if (event.key === "Escape") {
+                        setShowAddCompany(false);
+                        setNewCompany("");
+                      }
+                    }}
                     placeholder="Enter company name"
                     disabled={addingCompany}
                   />
 
-                  <button
-                    type="button"
-                    onClick={
-                      handleAddCompany
-                    }
-                    disabled={addingCompany}
-                  >
-                    {addingCompany
-                      ? "Adding..."
-                      : "Add Company"}
-                  </button>
+                  <div className="add-company-actions">
+                    <button
+                      type="button"
+                      className="add-company-submit-btn"
+                      onClick={
+                        handleAddCompany
+                      }
+                      disabled={addingCompany || !newCompany.trim()}
+                    >
+                      {addingCompany
+                        ? "Adding..."
+                        : "Add Company"}
+                    </button>
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowAddCompany(false);
-                      setNewCompany("");
-                    }}
-                    disabled={addingCompany}
-                  >
-                    Cancel
-                  </button>
+                    <button
+                      type="button"
+                      className="add-company-cancel-btn"
+                      onClick={() => {
+                        setShowAddCompany(false);
+                        setNewCompany("");
+                      }}
+                      disabled={addingCompany}
+                    >
+                      Cancel
+                    </button>
+                  </div>
                 </div>
               )}
             </>

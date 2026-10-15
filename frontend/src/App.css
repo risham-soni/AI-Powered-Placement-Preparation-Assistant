@@ -1143,6 +1143,166 @@
   height: 8px;
   border-radius: 9999px;
   flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.25);
+  transition: all var(--transition-fast);
+}
+
+.company-chip.active .chip-indicator {
+  background: var(--accent-primary);
+  box-shadow: 0 0 8px var(--accent-primary);
+}
+
+/* Add Company Button */
+.add-company-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 16px;
+  margin-top: 4px;
+  background: rgba(99, 102, 241, 0.06);
+  border: 1px dashed rgba(99, 102, 241, 0.4);
+  border-radius: var(--radius-md);
+  color: #a5b4fc;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.add-company-button:hover {
+  background: rgba(99, 102, 241, 0.14);
+  border-color: rgba(99, 102, 241, 0.7);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+/* Add Company Form */
+.add-company-form {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin-top: 4px;
+  padding: 10px 12px;
+  background: rgba(17, 24, 39, 0.85);
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(8px);
+}
+
+.add-company-form input,
+.add-company-input {
+  flex: 1;
+  min-width: 0;
+  padding: 9px 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--text-main);
+  font-size: 13.5px;
+  font-family: inherit;
+  outline: none;
+  transition: all var(--transition-fast);
+}
+
+.add-company-form input::placeholder,
+.add-company-input::placeholder {
+  color: var(--text-dim);
+}
+
+.add-company-form input:focus,
+.add-company-input:focus {
+  border-color: var(--border-focus);
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.add-company-form input:disabled,
+.add-company-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.add-company-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.add-company-form button {
+  padding: 9px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--transition-fast);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Primary "Add Company" Button */
+.add-company-form button:first-of-type,
+.add-company-submit-btn {
+  background: var(--accent-gradient);
+  color: #ffffff;
+  border: none;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+}
+
+.add-company-form button:first-of-type:hover:not(:disabled),
+.add-company-submit-btn:hover:not(:disabled) {
+  opacity: 0.95;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.45);
+  transform: translateY(-1px);
+}
+
+.add-company-form button:first-of-type:disabled,
+.add-company-submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Secondary "Cancel" Button */
+.add-company-form button:last-of-type,
+.add-company-cancel-btn {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-muted);
+  border: 1px solid var(--border-subtle);
+}
+
+.add-company-form button:last-of-type:hover:not(:disabled),
+.add-company-cancel-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.add-company-form button:last-of-type:disabled,
+.add-company-cancel-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 640px) {
+  .add-company-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .add-company-actions {
+    width: 100%;
+  }
+
+  .add-company-actions button {
+    flex: 1;
+  }
 }
 
 /* Dropzone */

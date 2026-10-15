@@ -62,7 +62,11 @@ class ChatResponse(BaseModel):
 
 class UploadRequest(BaseModel):
 
-    file_path: str
+    file_path: str | None = None
+
+    file_base64: str | None = None
+
+    file_name: str | None = None
 
     company: str
 
@@ -326,6 +330,10 @@ def process_document(
 
             file_path=request.file_path,
 
+            file_base64=request.file_base64,
+
+            file_name=request.file_name,
+
             company=request.company,
 
             user_id=request.user_id
@@ -394,8 +402,6 @@ def process_document(
 
             status_code=500,
 
-            detail=(
-                "Failed to process the uploaded PDF."
-            )
+            detail=f"Failed to process the uploaded PDF: {str(error)}"
 
         )

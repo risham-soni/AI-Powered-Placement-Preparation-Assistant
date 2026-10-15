@@ -31,18 +31,21 @@ def load_pdf(file_path: str):
 
         # If the PDF is image-based, use OCR
         if not text.strip():
-
-            pixmap = page.get_pixmap(
-                matrix=pymupdf.Matrix(2, 2)
-            )
-
-            image = Image.open(
-                io.BytesIO(
-                    pixmap.tobytes("png")
+            try:
+                pixmap = page.get_pixmap(
+                    matrix=pymupdf.Matrix(2, 2)
                 )
-            )
 
-            text = pytesseract.image_to_string(image)
+                image = Image.open(
+                    io.BytesIO(
+                        pixmap.tobytes("png")
+                    )
+                )
+
+                text = pytesseract.image_to_string(image)
+            except Exception as ocr_err:
+                print(f"OCR not available or failed on page {page_number + 1}: {ocr_err}")
+                text = ""
 
         print(f"Extracted characters: {len(text)}")
 

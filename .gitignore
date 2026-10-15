@@ -33,6 +33,8 @@ qdrant_data/
 rag-services/qdrant_data/
 backend/uploads/*
 !backend/uploads/.gitkeep
+rag-services/uploads/*
+!rag-services/uploads/.gitkeep
 
 # ------------------------------------------------------------------------------
 # Environment Variables & Secrets
