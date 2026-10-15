@@ -43,15 +43,24 @@ app.add_middleware(
 # APPLICATION LIFECYCLE
 # ==================================
 
-@app.on_event("startup")
-def startup_event():
-    print("Application startup: warming up embedding model...")
+import threading
+
+
+def _warmup_model():
+    print("Background warmup: initializing embedding model...")
     try:
         from app.retrieval.retriever import get_model
         get_model()
-        print("Embedding model initialized successfully.")
+        print("Background warmup: embedding model ready.")
     except Exception as exc:
-        print("Model warmup skipped or failed during startup:", exc)
+        print("Background warmup warning:", exc)
+
+
+@app.on_event("startup")
+def startup_event():
+    # Run model warmup in a daemon thread so port binds immediately (<1ms)
+    # preventing Render port scan timeout during deployment
+    threading.Thread(target=_warmup_model, daemon=True).start()
 
 
 # ==================================

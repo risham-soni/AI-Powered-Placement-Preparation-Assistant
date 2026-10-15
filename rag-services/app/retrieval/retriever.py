@@ -27,23 +27,28 @@ client = QdrantClient(
     api_key=os.getenv("QDRANT_API_KEY")
 )
 
+import threading
+
 _model = None
+_model_lock = threading.Lock()
 
 def get_model():
     global _model
     if _model is None:
-        try:
-            from huggingface_hub.utils import logging as hf_logging
-            hf_logging.set_verbosity_error()
-        except Exception:
-            pass
+        with _model_lock:
+            if _model is None:
+                try:
+                    from huggingface_hub.utils import logging as hf_logging
+                    hf_logging.set_verbosity_error()
+                except Exception:
+                    pass
 
-        from sentence_transformers import SentenceTransformer
-        hf_token = os.getenv("HF_TOKEN")
-        if hf_token:
-            _model = SentenceTransformer("all-MiniLM-L6-v2", token=hf_token)
-        else:
-            _model = SentenceTransformer("all-MiniLM-L6-v2")
+                from sentence_transformers import SentenceTransformer
+                hf_token = os.getenv("HF_TOKEN")
+                if hf_token:
+                    _model = SentenceTransformer("all-MiniLM-L6-v2", token=hf_token)
+                else:
+                    _model = SentenceTransformer("all-MiniLM-L6-v2")
     return _model
 
 
