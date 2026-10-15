@@ -384,15 +384,34 @@ function App() {
         }
       );
 
-      const data =
-        await response.json();
+      const responseText = await response.text();
+      let data = {};
+      try {
+        data = responseText ? JSON.parse(responseText) : {};
+      } catch {
+        data = {};
+      }
 
       if (!response.ok) {
-        throw new Error(
-          data.detail ||
-          data.message ||
-          "AI service request failed"
-        );
+        if (
+          response.status === 502 ||
+          response.status === 503 ||
+          response.status === 504
+        ) {
+          throw new Error(
+            "The AI service is currently waking up (cold start). Please wait 20-30 seconds and send your question again."
+          );
+        }
+        let msg = data.detail || data.message;
+        if (
+          !msg ||
+          typeof msg !== "string" ||
+          msg.trim().startsWith("<") ||
+          msg.includes("<!DOCTYPE")
+        ) {
+          msg = `AI service returned error status ${response.status}. Please try again shortly.`;
+        }
+        throw new Error(msg);
       }
 
       const assistantMessage = {

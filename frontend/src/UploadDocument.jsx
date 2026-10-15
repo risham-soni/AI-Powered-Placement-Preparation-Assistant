@@ -294,13 +294,34 @@ function UploadDocument({ onUploadSuccess }) {
         }
       );
 
-      const data = await response.json();
+      const responseText = await response.text();
+      let data = {};
+      try {
+        data = responseText ? JSON.parse(responseText) : {};
+      } catch {
+        data = {};
+      }
 
       if (!response.ok) {
-        throw new Error(
-          data.message ||
-            "Failed to upload and process document."
-        );
+        let msg = data.message || data.detail;
+        if (
+          !msg ||
+          typeof msg !== "string" ||
+          msg.trim().startsWith("<") ||
+          msg.includes("<!DOCTYPE")
+        ) {
+          if (
+            response.status === 502 ||
+            response.status === 503 ||
+            response.status === 504
+          ) {
+            msg =
+              "The AI indexing service is currently waking up (cold start 502). Please wait 30 seconds and click 'Index Document' again.";
+          } else {
+            msg = `Upload failed (status ${response.status}). Please try again.`;
+          }
+        }
+        throw new Error(msg);
       }
 
       setMessage(
@@ -320,10 +341,17 @@ function UploadDocument({ onUploadSuccess }) {
         fileInputRef.current.value = "";
       }
     } catch (err) {
-      setError(
+      let msg =
         err.message ||
-          "Unable to upload PDF. Please verify your backend server."
-      );
+        "Unable to upload PDF. Please verify your backend server.";
+      if (
+        typeof msg === "string" &&
+        (msg.trim().startsWith("<") || msg.includes("<!DOCTYPE"))
+      ) {
+        msg =
+          "The AI indexing service is temporarily starting up. Please wait a moment and try again.";
+      }
+      setError(msg);
     } finally {
       setLoading(false);
     }

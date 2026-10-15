@@ -6,6 +6,7 @@ from qdrant_client.models import (
     Filter,
     FieldCondition,
     MatchValue,
+    PayloadSchemaType,
 )
 import os
 import hashlib
@@ -87,6 +88,21 @@ def create_collection():
             f"{COLLECTION_NAME}"
         )
 
+    # Ensure required payload indices exist for filtering
+    for field, schema in [
+        ("company", PayloadSchemaType.KEYWORD),
+        ("document_name", PayloadSchemaType.KEYWORD),
+        ("user_id", PayloadSchemaType.INTEGER),
+    ]:
+        try:
+            client.create_payload_index(
+                collection_name=COLLECTION_NAME,
+                field_name=field,
+                field_schema=schema,
+            )
+        except Exception:
+            pass
+
 
 # ==================================
 # CREATE POINT ID
@@ -127,14 +143,19 @@ def add_documents(documents):
 
     texts = [doc["text"] for doc in documents]
 
-    # Batch encode with inference_mode to minimize memory footprint
+    # Batch encode with mini-slices and inference_mode to minimize memory footprint on Render 512MB
+    vectors = []
+    chunk_size = 8
     with torch.inference_mode():
-        vectors = model.encode(
-            texts,
-            batch_size=4,
-            show_progress_bar=False,
-            normalize_embeddings=True
-        ).tolist()
+        for i in range(0, len(texts), chunk_size):
+            batch_texts = texts[i : i + chunk_size]
+            batch_vecs = model.encode(
+                batch_texts,
+                batch_size=2,
+                show_progress_bar=False,
+                normalize_embeddings=True,
+            ).tolist()
+            vectors.extend(batch_vecs)
 
     import gc
     gc.collect()

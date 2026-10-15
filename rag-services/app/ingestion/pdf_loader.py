@@ -7,11 +7,16 @@ import io
 
 import platform
 import os
+import shutil
 
+TESSERACT_AVAILABLE = False
 if platform.system() == "Windows" and os.path.exists(r"C:\Program Files\Tesseract-OCR\tesseract.exe"):
     pytesseract.pytesseract.tesseract_cmd = (
         r"C:\Program Files\Tesseract-OCR\tesseract.exe"
     )
+    TESSERACT_AVAILABLE = True
+elif shutil.which("tesseract"):
+    TESSERACT_AVAILABLE = True
 
 
 def load_pdf(file_path: str):
@@ -29,8 +34,8 @@ def load_pdf(file_path: str):
         # First try normal PDF text extraction
         text = page.get_text()
 
-        # If the PDF is image-based, use OCR
-        if not text.strip():
+        # If the PDF is image-based and OCR is available, use OCR
+        if not text.strip() and TESSERACT_AVAILABLE:
             try:
                 pixmap = page.get_pixmap(
                     matrix=pymupdf.Matrix(2, 2)

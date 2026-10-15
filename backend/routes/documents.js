@@ -175,46 +175,73 @@ router.post(
         // even when running in separate containers or isolated cloud environments (like Render).
         const fileBuffer = fs.readFileSync(req.file.path);
         const fileBase64 = fileBuffer.toString("base64");
+        const targetFileName = req.file.originalname || req.file.filename;
 
-        const ragResponse = await fetch(
-          `${RAG_SERVICE_URL}/documents/process`,
-          {
-            method: "POST",
+        const requestBody = JSON.stringify({
+          file_path: path.resolve(req.file.path),
+          file_name: targetFileName,
+          file_base64: fileBase64,
+          company: company,
+          user_id: req.user.userId,
+        });
 
-            headers: {
-              "Content-Type": "application/json",
-            },
-
-            body: JSON.stringify({
-              file_path: path.resolve(
-                req.file.path
-              ),
-              file_name: req.file.filename,
-              file_base64: fileBase64,
-              company: company,
-              user_id: req.user.userId,
-            }),
-          }
-        );
-
-        // Safely parse response to avoid "Unexpected end of JSON input" on empty/HTML responses
-        const responseText = await ragResponse.text();
+        let ragResponse = null;
+        let responseText = "";
         let ragData = {};
-        try {
-          ragData = responseText ? JSON.parse(responseText) : {};
-        } catch (jsonErr) {
-          ragData = {
-            detail:
-              responseText ||
-              `RAG service returned status ${ragResponse.status}`,
-          };
+        const maxAttempts = 2;
+
+        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+          try {
+            ragResponse = await fetch(
+              `${RAG_SERVICE_URL}/documents/process`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: requestBody,
+              }
+            );
+
+            responseText = await ragResponse.text();
+            try {
+              ragData = responseText ? JSON.parse(responseText) : {};
+            } catch {
+              ragData = {};
+            }
+
+            // If Render free tier is waking up from sleep (502/503/504), wait and retry once
+            if (
+              (ragResponse.status === 502 ||
+                ragResponse.status === 503 ||
+                ragResponse.status === 504) &&
+              attempt < maxAttempts
+            ) {
+              console.log(
+                `RAG service returned ${ragResponse.status} (likely cold start). Retrying in 6s (attempt ${attempt}/${maxAttempts})...`
+              );
+              await new Promise((resolve) => setTimeout(resolve, 6000));
+              continue;
+            }
+
+            break;
+          } catch (fetchErr) {
+            if (attempt < maxAttempts) {
+              console.log(
+                `RAG service connection attempt ${attempt} failed (${fetchErr.message}). Retrying in 6s...`
+              );
+              await new Promise((resolve) => setTimeout(resolve, 6000));
+            } else {
+              throw fetchErr;
+            }
+          }
         }
 
-        if (!ragResponse.ok) {
+        if (!ragResponse || !ragResponse.ok) {
           console.error(
             "RAG processing error:",
-            ragResponse.status,
-            ragData
+            ragResponse?.status,
+            ragData || responseText
           );
 
           // Rollback inserted document in database so broken entries are not kept
@@ -223,10 +250,31 @@ router.post(
             [result.rows[0].id]
           );
 
+          let friendlyMessage = ragData.detail || ragData.message;
+          // Sanitize raw HTML error pages (e.g., Render/Cloudflare 502 Bad Gateway)
+          if (
+            !friendlyMessage ||
+            typeof friendlyMessage !== "string" ||
+            friendlyMessage.trim().startsWith("<") ||
+            friendlyMessage.includes("<!DOCTYPE")
+          ) {
+            if (
+              ragResponse &&
+              (ragResponse.status === 502 ||
+                ragResponse.status === 503 ||
+                ragResponse.status === 504)
+            ) {
+              friendlyMessage =
+                "The AI indexing service is temporarily waking up from sleep (Render 502). Please wait 30 seconds and click 'Index Document' again.";
+            } else {
+              friendlyMessage = `RAG indexing service returned status ${
+                ragResponse?.status || 500
+              }. Please try again shortly.`;
+            }
+          }
+
           return res.status(500).json({
-            message:
-              ragData.detail ||
-              `RAG service error (status ${ragResponse.status})`,
+            message: friendlyMessage,
             document: result.rows[0],
           });
         }
@@ -252,7 +300,7 @@ router.post(
 
         return res.status(500).json({
           message:
-            "PDF was uploaded, but the RAG service could not be reached: " +
+            "PDF was uploaded, but the AI indexing service could not be reached: " +
             ragError.message,
           document: result.rows[0],
         });
