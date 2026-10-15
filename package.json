@@ -1,0 +1,16 @@
+{
+  "name": "ai-powered-placement-preparation-assistant",
+  "version": "1.0.0",
+  "description": "Full-stack AI-Powered Placement Preparation Assistant with FastAPI, Express, PostgreSQL, Qdrant, and React",
+  "scripts": {
+    "dev": "concurrently -n \"BACKEND,RAG,FRONTEND\" -c \"blue,green,magenta\" \"npm run dev:backend\" \"npm run dev:rag\" \"npm run dev:frontend\"",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:rag": "cd rag-services && python app/main.py",
+    "dev:frontend": "cd frontend && npm run dev",
+    "install:all": "npm --prefix backend install && npm --prefix frontend install && cd rag-services && pip install -r requirements.txt",
+    "build:frontend": "npm --prefix frontend run build"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

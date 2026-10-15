@@ -219,27 +219,52 @@ CREATE TABLE user_documents (
 
 ---
 
-## ⚙️ Installation & Setup Guide
+## ⚡ Quick Start: Run Locally in 1 Command
+
+For complete local setup details, see the dedicated [**Localhost Development Guide (LOCAL_SETUP.md)**](LOCAL_SETUP.md).
+
+### Single Command:
+```bash
+# 1. Install all dependencies across all 3 tiers
+npm run install:all
+
+# 2. Run Backend, RAG Microservice, and Frontend concurrently
+npm run dev
+```
+
+### 1-Click Launchers:
+- **Windows**: Double-click `start-local.bat` or run `powershell ./start-local.ps1`
+- **macOS / Linux**: Run `bash ./start-local.sh`
+
+| Service | Local URL |
+| :--- | :--- |
+| **React Frontend** | [http://localhost:5173](http://localhost:5173) |
+| **Express Backend** | [http://localhost:5000](http://localhost:5000) |
+| **FastAPI RAG Microservice** | [http://127.0.0.1:8000](http://127.0.0.1:8000) (Docs at `/docs`) |
+
+---
+
+## ⚙️ Manual Step-by-Step Installation
 
 ### 1. Prerequisites
 
 Ensure you have the following installed on your system:
 - [Node.js](https://nodejs.org/) (v18 or higher) & `npm`
 - [Python](https://www.python.org/) (v3.10 or higher) & `pip`
-- [PostgreSQL](https://www.postgresql.org/) (v14 or higher)
-- [Tesseract OCR](https://github.com/UB-Mannheim/tesseract/wiki) *(Required for scanned/image PDFs; default path on Windows: `C:\Program Files\Tesseract-OCR\tesseract.exe`)*
+- [PostgreSQL](https://www.postgresql.org/) (v14 or higher) or [Supabase](https://supabase.com/)
+- [Tesseract OCR](https://github.com/UB-Mannheim/tesseract/wiki) *(Optional for scanned/image PDFs; default Windows path: `C:\Program Files\Tesseract-OCR\tesseract.exe`)*
 - A [Google AI Studio Gemini API Key](https://aistudio.google.com/)
 
 ---
 
-### 2. Configure PostgreSQL
+### 2. Configure PostgreSQL Database
 
 1. Open your PostgreSQL terminal (`psql`) or pgAdmin.
-2. Create a new database named `placement_assistant`:
-   ```sql
-   CREATE DATABASE placement_assistant;
+2. Initialize all tables and default companies using the provided schema:
+   ```bash
+   psql -U postgres -d placement_assistant -f database/schema.sql
    ```
-3. Connect to the database and run the table creation scripts detailed in the [Database Schemas](#1-postgresql-relational-schema) section.
+   *(Or run the SQL statements in [`database/schema.sql`](database/schema.sql)).*
 
 ---
 

@@ -7,6 +7,8 @@ const bcrypt = require("bcryptjs");
 const pool = require("./db");
 const express = require("express");
 const cors = require("cors");
+const path = require("path");
+require("dotenv").config({ path: path.join(__dirname, ".env") });
 require("dotenv").config();
 
 const app = express();

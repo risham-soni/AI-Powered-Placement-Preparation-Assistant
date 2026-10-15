@@ -1,4 +1,11 @@
 import os
+import sys
+from pathlib import Path
+
+# Ensure rag-services root is in sys.path so 'app' package resolves from any directory
+_rag_root = Path(__file__).resolve().parent.parent
+if str(_rag_root) not in sys.path:
+    sys.path.insert(0, str(_rag_root))
 
 import jwt
 
@@ -32,7 +39,7 @@ app.add_middleware(
         "http://127.0.0.1:5173",
         "https://ai-powered-placement-preparation-assistant-c3903we45.vercel.app"
     ],
-    allow_origin_regex=r"https://.*\.vercel\.app",
+    allow_origin_regex=r"^(https://.*\.vercel\.app|http://(localhost|127\.0\.0\.1)(:\d+)?)$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -451,3 +458,10 @@ def process_document(
             detail=f"Failed to process the uploaded PDF: {str(error)}"
 
         )
+
+
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.getenv("PORT", 8000))
+    print(f"Starting Placement Assistant RAG API on http://127.0.0.1:{port}")
+    uvicorn.run("app.main:app", host="0.0.0.0", port=port, reload=True)

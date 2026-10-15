@@ -11,8 +11,12 @@ from qdrant_client.models import (
 import os
 import hashlib
 import torch
+from pathlib import Path
 from dotenv import load_dotenv
 
+_env_path = Path(__file__).resolve().parents[2] / ".env"
+if _env_path.exists():
+    load_dotenv(_env_path)
 load_dotenv()
 
 COLLECTION_NAME = "placement_documents"
@@ -23,10 +27,13 @@ torch.set_grad_enabled(False)
 os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
 os.environ.setdefault("HF_HUB_DISABLE_SYMLINKS_WARNING", "1")
 
-client = QdrantClient(
-    url=os.getenv("QDRANT_URL"),
-    api_key=os.getenv("QDRANT_API_KEY")
-)
+_qdrant_url = os.getenv("QDRANT_URL", "http://localhost:6333")
+_qdrant_api_key = os.getenv("QDRANT_API_KEY")
+
+if _qdrant_api_key:
+    client = QdrantClient(url=_qdrant_url, api_key=_qdrant_api_key)
+else:
+    client = QdrantClient(url=_qdrant_url)
 
 import threading
 
