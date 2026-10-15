@@ -16,8 +16,11 @@ load_dotenv()
 
 COLLECTION_NAME = "placement_documents"
 
-# Limit PyTorch threads to reduce memory footprint on 512MB RAM instances
+# Optimize PyTorch and HuggingFace for 512MB RAM cloud instances (e.g. Render)
 torch.set_num_threads(1)
+torch.set_grad_enabled(False)
+os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
+os.environ.setdefault("HF_HUB_DISABLE_SYMLINKS_WARNING", "1")
 
 client = QdrantClient(
     url=os.getenv("QDRANT_URL"),
@@ -29,8 +32,18 @@ _model = None
 def get_model():
     global _model
     if _model is None:
+        try:
+            from huggingface_hub.utils import logging as hf_logging
+            hf_logging.set_verbosity_error()
+        except Exception:
+            pass
+
         from sentence_transformers import SentenceTransformer
-        _model = SentenceTransformer("all-MiniLM-L6-v2")
+        hf_token = os.getenv("HF_TOKEN")
+        if hf_token:
+            _model = SentenceTransformer("all-MiniLM-L6-v2", token=hf_token)
+        else:
+            _model = SentenceTransformer("all-MiniLM-L6-v2")
     return _model
 
 
@@ -106,10 +119,20 @@ def add_documents(documents):
     create_collection()
 
     model = get_model()
-    vectors = model.encode(
-        [doc["text"] for doc in documents],
-        normalize_embeddings=True
-    ).tolist()
+
+    texts = [doc["text"] for doc in documents]
+
+    # Batch encode with inference_mode to minimize memory footprint
+    with torch.inference_mode():
+        vectors = model.encode(
+            texts,
+            batch_size=4,
+            show_progress_bar=False,
+            normalize_embeddings=True
+        ).tolist()
+
+    import gc
+    gc.collect()
 
     points = []
 
@@ -173,10 +196,13 @@ def search(
 ):
 
     model = get_model()
-    query_vector = model.encode(
-        query,
-        normalize_embeddings=True
-    ).tolist()
+
+    with torch.inference_mode():
+        query_vector = model.encode(
+            query,
+            show_progress_bar=False,
+            normalize_embeddings=True
+        ).tolist()
 
 
     # ==================================

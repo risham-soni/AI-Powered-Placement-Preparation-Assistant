@@ -40,6 +40,21 @@ app.add_middleware(
 
 
 # ==================================
+# APPLICATION LIFECYCLE
+# ==================================
+
+@app.on_event("startup")
+def startup_event():
+    print("Application startup: warming up embedding model...")
+    try:
+        from app.retrieval.retriever import get_model
+        get_model()
+        print("Embedding model initialized successfully.")
+    except Exception as exc:
+        print("Model warmup skipped or failed during startup:", exc)
+
+
+# ==================================
 # REQUEST MODELS
 # ==================================
 

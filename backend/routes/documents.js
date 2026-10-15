@@ -197,12 +197,23 @@ router.post(
           }
         );
 
-        const ragData =
-          await ragResponse.json();
+        // Safely parse response to avoid "Unexpected end of JSON input" on empty/HTML responses
+        const responseText = await ragResponse.text();
+        let ragData = {};
+        try {
+          ragData = responseText ? JSON.parse(responseText) : {};
+        } catch (jsonErr) {
+          ragData = {
+            detail:
+              responseText ||
+              `RAG service returned status ${ragResponse.status}`,
+          };
+        }
 
         if (!ragResponse.ok) {
           console.error(
             "RAG processing error:",
+            ragResponse.status,
             ragData
           );
 
@@ -215,7 +226,7 @@ router.post(
           return res.status(500).json({
             message:
               ragData.detail ||
-              "PDF was uploaded, but RAG processing failed.",
+              `RAG service error (status ${ragResponse.status})`,
             document: result.rows[0],
           });
         }
