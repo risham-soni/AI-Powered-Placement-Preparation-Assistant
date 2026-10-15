@@ -188,10 +188,15 @@ router.post(
         let ragResponse = null;
         let responseText = "";
         let ragData = {};
-        const maxAttempts = 2;
+        const maxAttempts = 8;
+        const retryDelayMs = 5000;
 
         for (let attempt = 1; attempt <= maxAttempts; attempt++) {
           try {
+            console.log(
+              `[RAG Upload] Sending document to ${RAG_SERVICE_URL}/documents/process (attempt ${attempt}/${maxAttempts})...`
+            );
+
             ragResponse = await fetch(
               `${RAG_SERVICE_URL}/documents/process`,
               {
@@ -210,7 +215,7 @@ router.post(
               ragData = {};
             }
 
-            // If Render free tier is waking up from sleep (502/503/504), wait and retry once
+            // If Render free tier is waking up from sleep (502/503/504), wait and retry
             if (
               (ragResponse.status === 502 ||
                 ragResponse.status === 503 ||
@@ -218,19 +223,22 @@ router.post(
               attempt < maxAttempts
             ) {
               console.log(
-                `RAG service returned ${ragResponse.status} (likely cold start). Retrying in 6s (attempt ${attempt}/${maxAttempts})...`
+                `[RAG Upload] RAG service returned ${ragResponse.status} (service is waking up from sleep). Retrying in 5s (attempt ${attempt}/${maxAttempts})...`
               );
-              await new Promise((resolve) => setTimeout(resolve, 6000));
+              await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
               continue;
             }
 
+            console.log(
+              `[RAG Upload] RAG service responded with status ${ragResponse.status} on attempt ${attempt}`
+            );
             break;
           } catch (fetchErr) {
             if (attempt < maxAttempts) {
               console.log(
-                `RAG service connection attempt ${attempt} failed (${fetchErr.message}). Retrying in 6s...`
+                `[RAG Upload] Connection attempt ${attempt} failed (${fetchErr.message}). Retrying in 5s...`
               );
-              await new Promise((resolve) => setTimeout(resolve, 6000));
+              await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
             } else {
               throw fetchErr;
             }

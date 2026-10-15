@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { API_BASE_URL } from "./config";
+import { API_BASE_URL, RAG_BASE_URL } from "./config";
 
 import {
   UploadCloud,
@@ -42,6 +42,9 @@ function UploadDocument({ onUploadSuccess }) {
 
   useEffect(() => {
     loadCompanies();
+    // Pre-warm the RAG service immediately when Document Hub opens
+    // so it is awake by the time the user selects a company and clicks upload
+    fetch(`${RAG_BASE_URL}/health`).catch(() => {});
   }, []);
 
   const loadCompanies = async () => {
@@ -638,6 +641,16 @@ function UploadDocument({ onUploadSuccess }) {
             retrieved and cited.
           </div>
         </div>
+
+        {/* Waking Up Notice while processing */}
+        {loading && (
+          <div className="waking-up-notice">
+            <Info size={16} />
+            <span>
+              Indexing document with RAG AI... If the service was sleeping, it takes ~20-30 seconds to wake up. Please keep this tab open.
+            </span>
+          </div>
+        )}
 
         {/* Submit Button */}
 

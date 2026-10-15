@@ -206,6 +206,11 @@ function App() {
     scrollToBottom();
   }, [messages, loading]);
 
+  // Pre-warm the RAG service on page load so it is awake by the time user chats or uploads
+  useEffect(() => {
+    fetch(`${RAG_BASE_URL}/health`).catch(() => {});
+  }, []);
+
 
   // =========================================
   // LOAD CHAT HISTORY

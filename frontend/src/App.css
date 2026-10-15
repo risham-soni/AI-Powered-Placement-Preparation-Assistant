@@ -2062,3 +2062,32 @@
   color: #a5b4fc;
   cursor: pointer;
 }
+
+/* ================================= */
+/* WAKING UP NOTICE                  */
+/* ================================= */
+
+.waking-up-notice {
+  margin-top: 14px;
+  margin-bottom: 8px;
+  padding: 12px 16px;
+  background: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  border-radius: 8px;
+  color: #c7d2fe;
+  font-size: 13px;
+  line-height: 1.5;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: pulseNotice 2s infinite ease-in-out;
+}
+
+@keyframes pulseNotice {
+  0%, 100% {
+    border-color: rgba(99, 102, 241, 0.35);
+  }
+  50% {
+    border-color: rgba(99, 102, 241, 0.7);
+  }
+}

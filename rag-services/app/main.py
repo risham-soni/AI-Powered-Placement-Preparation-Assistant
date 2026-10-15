@@ -44,23 +44,37 @@ app.add_middleware(
 # ==================================
 
 import threading
+import time
+import sys
+
+# Ensure stdout is unbuffered so all prints show up immediately in Render logs
+try:
+    sys.stdout.reconfigure(line_buffering=True)
+except Exception:
+    pass
 
 
 def _warmup_model():
-    print("Background warmup: initializing embedding model...")
+    # Delay 2 seconds so Uvicorn completes port binding and passes Render's initial port scan
+    time.sleep(2)
+    print("[Warmup] Initializing embedding model in background...", flush=True)
     try:
         from app.retrieval.retriever import get_model
         get_model()
-        print("Background warmup: embedding model ready.")
+        print("[Warmup] Embedding model initialized and ready for queries!", flush=True)
     except Exception as exc:
-        print("Background warmup warning:", exc)
+        print("[Warmup] Model warmup warning:", exc, flush=True)
 
 
 @app.on_event("startup")
 def startup_event():
-    # Run model warmup in a daemon thread so port binds immediately (<1ms)
-    # preventing Render port scan timeout during deployment
+    print("[Startup] RAG API started. Starting background model warmup...", flush=True)
     threading.Thread(target=_warmup_model, daemon=True).start()
+
+
+@app.on_event("shutdown")
+def shutdown_event():
+    print("[Shutdown] RAG API is shutting down gracefully (Render rolling deploy or idle sleep).", flush=True)
 
 
 # ==================================
