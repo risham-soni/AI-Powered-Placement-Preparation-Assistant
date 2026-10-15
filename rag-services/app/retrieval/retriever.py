@@ -28,13 +28,27 @@ torch.set_grad_enabled(False)
 os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
 os.environ.setdefault("HF_HUB_DISABLE_SYMLINKS_WARNING", "1")
 
-_qdrant_url = os.getenv("QDRANT_URL", "http://localhost:6333")
+_qdrant_path = os.getenv("QDRANT_PATH")
+_qdrant_url = os.getenv("QDRANT_URL")
 _qdrant_api_key = os.getenv("QDRANT_API_KEY")
 
-if _qdrant_api_key:
-    client = QdrantClient(url=_qdrant_url, api_key=_qdrant_api_key)
+if _qdrant_path and _qdrant_path.strip():
+    # Local embedded disk storage (No Docker needed)
+    resolved_path = Path(_qdrant_path.strip())
+    if not resolved_path.is_absolute():
+        resolved_path = (Path(__file__).resolve().parents[2] / resolved_path).resolve()
+    resolved_path.mkdir(parents=True, exist_ok=True)
+    print(f"Connecting to Local Embedded Qdrant at: {resolved_path}")
+    client = QdrantClient(path=str(resolved_path))
+elif _qdrant_api_key and _qdrant_api_key.strip():
+    # Qdrant Cloud cluster
+    print(f"Connecting to Qdrant Cloud Cluster: {_qdrant_url}")
+    client = QdrantClient(url=_qdrant_url.strip(), api_key=_qdrant_api_key.strip())
 else:
-    client = QdrantClient(url=_qdrant_url)
+    # Local or remote URL fallback (e.g. Docker localhost:6333)
+    target_url = (_qdrant_url or "http://localhost:6333").strip()
+    print(f"Connecting to Qdrant URL: {target_url}")
+    client = QdrantClient(url=target_url)
 
 import threading
 
